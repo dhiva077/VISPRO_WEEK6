@@ -1,16 +1,23 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:app_links/app_links.dart';
+import 'details_page.dart';
 
-void main() => runApp(MyApp());
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+void main() => runApp(const MyApp());
 
 class MyApp extends StatefulWidget {
+  const MyApp({super.key});
   @override
   State<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
   late final AppLinks _appLinks;
+  StreamSubscription<Uri>? _sub;
   String _status = 'Waiting for link...';
+  String? _latestLink;
 
   @override
   void initState() {
@@ -21,51 +28,71 @@ class _MyAppState extends State<MyApp> {
   Future<void> initDeepLinks() async {
     _appLinks = AppLinks();
 
-    // Handle link ketika app pertama kali dibuka
-    final Uri? initialLink = await _appLinks.getInitialLink();
-    if (initialLink != null) _handleLink(initialLink);
+    // 1) handle cold start
+    try {
+      final Uri? initialLink = await _appLinks.getInitialLink();
+      if (initialLink != null) _handleLink(initialLink);
+    } catch (e) {
+      setState(() => _status = 'Failed to get initial link: $e');
+    }
 
-    // Dengarkan link baru saat app masih hidup
-    _appLinks.uriLinkStream.listen((Uri uri) {
-      _handleLink(uri);
+    // 2) handle links while app is running
+    _sub = _appLinks.uriLinkStream.listen((Uri uri) {
+      if (uri != null) _handleLink(uri);
+    }, onError: (err) {
+      setState(() => _status = 'Link stream error: $err');
     });
   }
 
   void _handleLink(Uri uri) {
-    setState(() => _status = 'Received link: $uri');
+    final linkStr = uri.toString();
+    setState(() {
+      _latestLink = linkStr;
+      _status = 'Received link: $linkStr';
+    });
 
-    if (uri.host == 'details') {
-      final id = uri.pathSegments.isNotEmpty ? uri.pathSegments[0] : 'unknown';
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => DetailScreen(id: id)),
+    // Support both forms:
+    //  - myapp://details/42  (host = 'details', pathSegments = ['42'])
+    //  - myapp://example/details/42 (host != 'details', pathSegments may include 'details')
+    final host = uri.host;
+    final segments = uri.pathSegments;
+
+    String? itemId;
+
+    if (host == 'details' && segments.isNotEmpty) {
+      itemId = segments[0];
+    } else if (segments.isNotEmpty && segments[0] == 'details' && segments.length > 1) {
+      itemId = segments[1];
+    }
+
+    if (itemId != null) {
+      // gunakan navigatorKey untuk menghindari masalah context
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (_) => DetailsPage(itemId: itemId!)),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'App Links Demo',
+      navigatorKey: navigatorKey,
       home: Scaffold(
         appBar: AppBar(title: const Text('Home')),
         body: Center(
-          child: Text(_status),
+          child: Text(
+            _latestLink != null ? _status : 'Waiting for link...',
+            textAlign: TextAlign.center,
+          ),
         ),
       ),
-    );
-  }
-}
-
-class DetailScreen extends StatelessWidget {
-  final String id;
-  const DetailScreen({required this.id});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Details')),
-      body: Center(child: Text('You opened item ID: $id')),
     );
   }
 }
