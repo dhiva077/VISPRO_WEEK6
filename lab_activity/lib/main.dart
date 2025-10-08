@@ -51,24 +51,21 @@ class _MyAppState extends State<MyApp> {
       _status = 'Received link: $linkStr';
     });
 
-    // Support both forms:
-    //  - myapp://details/42  (host = 'details', pathSegments = ['42'])
-    //  - myapp://example/details/42 (host != 'details', pathSegments may include 'details')
     final host = uri.host;
     final segments = uri.pathSegments;
 
-    String? itemId;
-
+    // Handle deep link ke detail
     if (host == 'details' && segments.isNotEmpty) {
-      itemId = segments[0];
-    } else if (segments.isNotEmpty && segments[0] == 'details' && segments.length > 1) {
-      itemId = segments[1];
-    }
-
-    if (itemId != null) {
-      // gunakan navigatorKey untuk menghindari masalah context
+      final itemId = segments[0];
       navigatorKey.currentState?.push(
-        MaterialPageRoute(builder: (_) => DetailsPage(itemId: itemId!)),
+        MaterialPageRoute(builder: (_) => DetailsPage(itemId: itemId)),
+      );
+    }
+    // Handle deep link ke profile
+    else if (host == 'profile' && segments.isNotEmpty) {
+      final username = segments[0];
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (_) => ProfileScreen(username: username)),
       );
     }
   }
@@ -91,6 +88,25 @@ class _MyAppState extends State<MyApp> {
             _latestLink != null ? _status : 'Waiting for link...',
             textAlign: TextAlign.center,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ✅ Tambahkan di bawah, tanpa buat file baru
+class ProfileScreen extends StatelessWidget {
+  final String username;
+  const ProfileScreen({super.key, required this.username});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Profile')),
+      body: Center(
+        child: Text(
+          'Hello, $username!',
+          style: const TextStyle(fontSize: 20),
         ),
       ),
     );
