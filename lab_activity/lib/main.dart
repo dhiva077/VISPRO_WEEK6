@@ -6,11 +6,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Navigation Lab',
+      title: 'Deep Link Demo',
       initialRoute: '/',
       routes: {
         '/': (context) => HomeScreen(),
-        '/details': (context) => DetailsScreen(),
+        '/details': (context) => DetailScreen(),
       },
     );
   }
@@ -20,69 +20,20 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Home Screen')),
+      appBar: AppBar(title: Text('Home')),
       body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.pushNamed(context, '/details');
-          },
-          child: Text('Open Details'),
-        ),
+        child: Text('Welcome! Try opening myapp://details/42'),
       ),
     );
   }
 }
 
-class DetailsScreen extends StatelessWidget {
+class DetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Details Screen')),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text('Back to Home'),
-        ),
-      ),
-    );
-  }
-}
-
-class FirstScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('First Screen')),
-      body: Center(
-        child: ElevatedButton(
-          child: Text('Go to Second Screen'),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => SecondScreen()),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class SecondScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Second Screen')),
-      body: Center(
-        child: ElevatedButton(
-          child: Text('Go Back'),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-      ),
+      appBar: AppBar(title: Text('Details')),
+      body: Center(child: Text('You are on the Detail screen!')),
     );
   }
 }
